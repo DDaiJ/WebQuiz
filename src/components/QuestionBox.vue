@@ -14,7 +14,7 @@
 					<b-list-group-item
 						v-for="(answer, index) in shuffledAnswers" :key="index"
 						@click="selectAnswer(index)"
-						:class="[selectedIndex === index ? 'selected' : '']"
+						:class="answerClass(index)"
 					>
 						{{ answer}}
 					</b-list-group-item>
@@ -27,10 +27,11 @@
 		<b-button 
 			@click="checkAnswer" 
 			variant="primary"
+			:disabled="selectedIndex === null || submited"
 		>
 			Submit
 		</b-button>
-		<b-button @click="next" variant="success">Next</b-button>
+		<b-button @click="next" variant="success" :disabled="!submited">Next</b-button>
 	</b-jumbotron>
 </div>
 </template>
@@ -41,12 +42,15 @@ import _ from 'lodash'
 export default {
 	props: {
 		currentQuestion: Object,
-		next: Function
+		next: Function,
+		increment: Function
 	},
 	data() {
 		return {
 			selectedIndex: null,
-			shuffledAnswers: []
+			shuffledAnswers: [],
+			correctIndex: null,
+			submited: false,
 		}
 	},
 	computed: {
@@ -67,6 +71,7 @@ export default {
 			handler() {
 				this.selectedIndex = null
 				this.shuffleAnswers()
+				this.submited = false;
 			}
 		}
 
@@ -81,16 +86,32 @@ export default {
 
 		},
 		checkAnswer() {
-			if (this.shuffledAnswers[this.selectedIndex] === this.currentQuestion.correct_answer) {
-				return true;
+			let isCorrect = false;
+
+			if (this.selectedIndex === this.correctIndex) {
+				isCorrect = true
 			}
-			return false;	
+			this.increment(isCorrect)
+			this.submited = true;
 		},
 		shuffleAnswers() {
 			let answers = [...this.currentQuestion.incorrect_answers]
 			answers.push(this.currentQuestion.correct_answer)
 			// gonna use lodash library to help shuffer the array
 			this.shuffledAnswers = _.shuffle(answers)
+			this.correctIndex = this.shuffledAnswers.indexOf(this.currentQuestion.correct_answer)
+		},
+		answerClass(index) {
+			if (!this.submited && this.selectedIndex === index) {
+				return 'selected'
+			}
+			if (this.submited && this.correctIndex === index) {
+				return 'correct'
+			}
+			if (this.submited && this.selectedIndex === index) {
+				return 'incorrect'
+			}
+			return ''
 		}
 	}
 }
@@ -116,9 +137,9 @@ export default {
 }
 
 .correct {
-	background-color: #20DD40;
+	background-color: rgb(100, 243, 87);
 }
 .incorrect {
-	background-color: #DD2020;
+	background-color: rgb(245, 50, 50);
 }
 </style>
